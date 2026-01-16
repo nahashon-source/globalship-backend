@@ -3,7 +3,7 @@ Shipment model for tracking shipments.
 All queries use SQLAlchemy ORM for SQL injection protection.
 """
 import uuid
-from sqlalchemy import Column, String, DateTime, Enum, ForeignKey, Numeric, JSON
+from sqlalchemy import Column, String, DateTime, Enum, ForeignKey, Numeric, JSON, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -65,8 +65,8 @@ class Shipment(Base):
     status = Column(Enum(ShipmentStatus), nullable=False, default=ShipmentStatus.PENDING, index=True)
     
     # Package information
-    weight = Column(Numeric(10, 2), nullable=True)  # in kg
-    dimensions = Column(JSON, nullable=True)  # {"length": 10, "width": 20, "height": 30}
+    weight = Column(Numeric(10, 2), nullable=True)
+    dimensions = Column(JSON, nullable=True)
     package_count = Column(Numeric(10, 0), default=1, nullable=False)
     
     # Pricing

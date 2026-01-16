@@ -7,9 +7,5 @@ from sqlalchemy.ext.declarative import declarative_base
 # Create base class for all models
 Base = declarative_base()
 
-# Import all models here for Alembic to detect them
-from app.models.user import User
-from app.models.shipment import Shipment
-from app.models.shipment_event import ShipmentEvent
-from app.models.quote import Quote
-from app.models.contact_message import ContactMessage
+# Models will be imported by Alembic and other modules as needed
+# DO NOT import models here to avoid circular imports

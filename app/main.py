@@ -1,21 +1,29 @@
 """
-Main FastAPI application entry point.
+Main FastAPI application entry point with all production features.
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import text
 import logging
 
 from app.core.config import settings
 from app.api.v1.api import api_router
-
-# Configure logging
-logging.basicConfig(
-    level=getattr(logging, settings.LOG_LEVEL),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+from app.middleware.rate_limit import RateLimitMiddleware
+from app.utils.logger import setup_logging
+from app.utils.exceptions import GlobalShipException
+from app.utils.error_handlers import (
+    globalship_exception_handler,
+    validation_exception_handler,
+    integrity_error_handler,
+    generic_exception_handler
 )
-logger = logging.getLogger(__name__)
+
+# Setup logging
+logger = setup_logging()
 
 # Create FastAPI application
 app = FastAPI(
@@ -24,6 +32,7 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_PREFIX}/openapi.json",
     docs_url=f"{settings.API_V1_PREFIX}/docs",
     redoc_url=f"{settings.API_V1_PREFIX}/redoc",
+    description="GlobalShip Logistics API - Production Ready Backend",
 )
 
 # Add CORS middleware
@@ -35,6 +44,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add rate limiting middleware
+app.add_middleware(RateLimitMiddleware)
+
 # Add trusted host middleware for production
 if settings.ENVIRONMENT == "production":
     app.add_middleware(
@@ -42,22 +54,43 @@ if settings.ENVIRONMENT == "production":
         allowed_hosts=["*.globalship.com", "globalship.com"]
     )
 
+# Register exception handlers
+app.add_exception_handler(GlobalShipException, globalship_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(IntegrityError, integrity_error_handler)
+app.add_exception_handler(Exception, generic_exception_handler)
+
 
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup."""
+    logger.info("=" * 60)
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION}")
     logger.info(f"Environment: {settings.ENVIRONMENT}")
     logger.info(f"Debug mode: {settings.DEBUG}")
+    logger.info("=" * 60)
     
     # Test database connection
     try:
         from app.db.session import engine
         with engine.connect() as conn:
-            conn.execute("SELECT 1")
+            conn.execute(text("SELECT 1"))
         logger.info("✓ Database connection successful")
     except Exception as e:
         logger.error(f"✗ Database connection failed: {e}")
+    
+    # Test Redis connection
+    try:
+        from app.services.redis_service import redis_service
+        if redis_service.redis_client:
+            redis_service.redis_client.ping()
+            logger.info("✓ Redis connection successful")
+    except Exception as e:
+        logger.warning(f"⚠ Redis connection failed: {e}")
+    
+    logger.info("=" * 60)
+    logger.info("Application startup complete!")
+    logger.info("=" * 60)
 
 
 @app.on_event("shutdown")
@@ -75,7 +108,8 @@ async def root():
         "name": settings.PROJECT_NAME,
         "version": settings.VERSION,
         "status": "healthy",
-        "environment": settings.ENVIRONMENT
+        "environment": settings.ENVIRONMENT,
+        "docs": f"{settings.API_V1_PREFIX}/docs"
     }
 
 
@@ -92,10 +126,11 @@ async def health_check():
     try:
         from app.db.session import engine
         with engine.connect() as conn:
-            conn.execute("SELECT 1")
+            conn.execute(text("SELECT 1"))
         health_status["database"] = "healthy"
     except Exception as e:
         health_status["database"] = f"unhealthy: {str(e)}"
+        logger.error(f"Database health check failed: {e}")
     
     # Check Redis
     try:
@@ -105,6 +140,7 @@ async def health_check():
             health_status["redis"] = "healthy"
     except Exception as e:
         health_status["redis"] = f"unhealthy: {str(e)}"
+        logger.warning(f"Redis health check failed: {e}")
     
     overall_healthy = all(
         status == "healthy" 

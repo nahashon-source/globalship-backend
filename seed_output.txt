@@ -1,0 +1,57 @@
+============================================================
+Seeding GlobalShip Database
+============================================================
+2026-01-15 23:14:33,513 INFO sqlalchemy.engine.Engine select pg_catalog.version()
+2026-01-15 23:14:33,514 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-01-15 23:14:33,515 INFO sqlalchemy.engine.Engine select current_schema()
+2026-01-15 23:14:33,515 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-01-15 23:14:33,516 INFO sqlalchemy.engine.Engine show standard_conforming_strings
+2026-01-15 23:14:33,516 INFO sqlalchemy.engine.Engine [raw sql] {}
+2026-01-15 23:14:33,517 INFO sqlalchemy.engine.Engine BEGIN (implicit)
+2026-01-15 23:14:33,520 INFO sqlalchemy.engine.Engine SELECT users.id AS users_id, users.email AS users_email, users.hashed_password AS users_hashed_password, users.company_name AS users_company_name, users.phone AS users_phone, users.full_name AS users_full_name, users.is_active AS users_is_active, users.is_verified AS users_is_verified, users.is_superuser AS users_is_superuser, users.created_at AS users_created_at, users.updated_at AS users_updated_at, users.last_login AS users_last_login 
+FROM users 
+WHERE users.email = %(email_1)s 
+ LIMIT %(param_1)s
+2026-01-15 23:14:33,520 INFO sqlalchemy.engine.Engine [generated in 0.00020s] {'email_1': 'admin@globalship.com', 'param_1': 1}
+(trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "/home/nahashon/Desktop/globalship-backend/venv/lib/python3.8/site-packages/passlib/handlers/bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+AttributeError: module 'bcrypt' has no attribute '__about__'
+
+❌ Error seeding data: password cannot be longer than 72 bytes, truncate manually if necessary (e.g. my_password[:72])
+2026-01-15 23:14:33,528 INFO sqlalchemy.engine.Engine ROLLBACK
+Traceback (most recent call last):
+  File "scripts/seed_data.py", line 35, in <module>
+    hashed_password=get_password_hash("Admin123456"),
+  File "/home/nahashon/Desktop/globalship-backend/app/core/security.py", line 40, in get_password_hash
+    return pwd_context.hash(password)
+  File "/home/nahashon/Desktop/globalship-backend/venv/lib/python3.8/site-packages/passlib/context.py", line 2258, in hash
+    return record.hash(secret, **kwds)
+  File "/home/nahashon/Desktop/globalship-backend/venv/lib/python3.8/site-packages/passlib/utils/handlers.py", line 779, in hash
+    self.checksum = self._calc_checksum(secret)
+  File "/home/nahashon/Desktop/globalship-backend/venv/lib/python3.8/site-packages/passlib/handlers/bcrypt.py", line 591, in _calc_checksum
+    self._stub_requires_backend()
+  File "/home/nahashon/Desktop/globalship-backend/venv/lib/python3.8/site-packages/passlib/utils/handlers.py", line 2254, in _stub_requires_backend
+    cls.set_backend()
+  File "/home/nahashon/Desktop/globalship-backend/venv/lib/python3.8/site-packages/passlib/utils/handlers.py", line 2156, in set_backend
+    return owner.set_backend(name, dryrun=dryrun)
+  File "/home/nahashon/Desktop/globalship-backend/venv/lib/python3.8/site-packages/passlib/utils/handlers.py", line 2163, in set_backend
+    return cls.set_backend(name, dryrun=dryrun)
+  File "/home/nahashon/Desktop/globalship-backend/venv/lib/python3.8/site-packages/passlib/utils/handlers.py", line 2188, in set_backend
+    cls._set_backend(name, dryrun)
+  File "/home/nahashon/Desktop/globalship-backend/venv/lib/python3.8/site-packages/passlib/utils/handlers.py", line 2311, in _set_backend
+    super(SubclassBackendMixin, cls)._set_backend(name, dryrun)
+  File "/home/nahashon/Desktop/globalship-backend/venv/lib/python3.8/site-packages/passlib/utils/handlers.py", line 2224, in _set_backend
+    ok = loader(**kwds)
+  File "/home/nahashon/Desktop/globalship-backend/venv/lib/python3.8/site-packages/passlib/handlers/bcrypt.py", line 626, in _load_backend_mixin
+    return mixin_cls._finalize_backend_mixin(name, dryrun)
+  File "/home/nahashon/Desktop/globalship-backend/venv/lib/python3.8/site-packages/passlib/handlers/bcrypt.py", line 421, in _finalize_backend_mixin
+    if detect_wrap_bug(IDENT_2A):
+  File "/home/nahashon/Desktop/globalship-backend/venv/lib/python3.8/site-packages/passlib/handlers/bcrypt.py", line 380, in detect_wrap_bug
+    if verify(secret, bug_hash):
+  File "/home/nahashon/Desktop/globalship-backend/venv/lib/python3.8/site-packages/passlib/utils/handlers.py", line 792, in verify
+    return consteq(self._calc_checksum(secret), chk)
+  File "/home/nahashon/Desktop/globalship-backend/venv/lib/python3.8/site-packages/passlib/handlers/bcrypt.py", line 655, in _calc_checksum
+    hash = _bcrypt.hashpw(secret, config)
+ValueError: password cannot be longer than 72 bytes, truncate manually if necessary (e.g. my_password[:72])
